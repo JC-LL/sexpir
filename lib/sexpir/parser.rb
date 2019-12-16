@@ -99,6 +99,7 @@ module Sexpir
       comp=Component.new
       sexp.shift
       comp.name=sexp.shift
+      comp.type=sexp.shift
       comp
     end
 

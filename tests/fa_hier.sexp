@@ -10,11 +10,11 @@
  (component ha1 ha)
  (component ha2 ha)
 
- (connect a (ha1 a) )
- (connect (ha2 sum) (ha1 b))
- (connect b (ha2 a) )
- (connect cin (ha2 b ))
- (connect (ha1 sum) sum)
+ (connect a (port ha1 a) )
+ (connect (port ha2 sum) (port ha1 b))
+ (connect b (port ha2 a) )
+ (connect cin (port ha2 b ))
+ (connect (port ha1 sum) sum)
  (connect (port ha1 cout) tmp1)
  (connect (port ha2 cout) tmp2)
 

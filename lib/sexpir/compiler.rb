@@ -6,6 +6,7 @@ require_relative 'parser'
 require_relative 'printer'
 require_relative 'checker'
 require_relative 'transformer'
+require_relative 'ruby_rtl_generator'
 
 module Sexpir
 
@@ -27,6 +28,7 @@ module Sexpir
       circuit=Parser.new.parse(sexpfile)
       Printer.new.print(circuit)
       Checker.new.check(circuit)
+      RubyRTLGenerator.new.generate(circuit)
     end
 
     def close
