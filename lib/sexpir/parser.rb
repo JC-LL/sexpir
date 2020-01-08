@@ -40,6 +40,10 @@ module Sexpir
           circ.body << parse_component(s)
         when :connect
           circ.body << parse_connect(s)
+        when :comb,:combinatorial
+          circ.body << parse_comb(s)
+        when :seq,:sync,:sequential
+          circ.body << parse_seq(s)
         else
           raise "unknown car #{s}"
         end
@@ -86,13 +90,7 @@ module Sexpir
       output
     end
 
-    def parse_assign sexp
-      assign=Assign.new
-      sexp.shift
-      assign.lhs=parse_expression(sexp.shift)
-      assign.rhs=parse_expression(sexp.shift)
-      assign
-    end
+
 
     # ===== components stuff =====
     def parse_component sexp
@@ -122,6 +120,79 @@ module Sexpir
       else
         return sexp
       end
+    end
+
+    # statements
+    def parse_statement sexp
+      case sexp.first
+      when :if
+        parse_if(sexp)
+      when :assign
+        parse_assign(sexp)
+      else
+        raise "unknow statement starting with : #{sexp.first}"
+      end
+    end
+
+    def parse_comb sexp
+      comb=Combinatorial.new
+      sexp.shift
+      label=sexp.shift
+      comb.body=parse_body(sexp)
+      comb
+    end
+
+    def parse_body sexp
+      body=Body.new
+      while sexp.any?
+         body << parse_statement(sexp.shift)
+      end
+      body
+    end
+
+    def parse_if sexp
+      if_=If.new
+      sexp.shift
+      if_.cond = parse_expression(sexp.shift)
+      while sexp.any?
+        case sexp.first.first
+        when :then
+          if_.then = parse_then(sexp.shift)
+        when :elsif
+          if_.elsifs << parse_elsif(sexp.shift)
+        when :else
+          if_.else = parse_else(sexp.shift)
+        else
+          raise "error parsing 'if' : #{sexp.first.first}"
+        end
+      end
+      if_
+    end
+
+    def parse_then sexp
+      sexp.shift
+      body=parse_body(sexp)
+      body
+    end
+
+    def parse_elsif sexp
+      sexp.shift
+      body=parse_body(sexp)
+      body
+    end
+
+    def parse_else sexp
+      sexp.shift
+      body=parse_body(sexp)
+      body
+    end
+
+    def parse_assign sexp
+      assign=Assign.new
+      sexp.shift
+      assign.lhs=parse_expression(sexp.shift)
+      assign.rhs=parse_expression(sexp.shift)
+      assign
     end
 
     # expressions

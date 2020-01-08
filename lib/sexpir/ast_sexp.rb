@@ -56,9 +56,58 @@ module Sexpir
     end
   end
 
+  class Combinatorial < Ast
+    def sexp
+      code=Code.new
+      label_s=label ? label : "nil"
+      code << "(combinatorial #{label_s}"
+      code.indent=2
+      code << body.sexp
+      code.indent=0
+      code << ")"
+      code
+    end
+  end
+
+  class Sequential < Ast
+    def sexp
+      code=Code.new
+      label_s=label ? label : "nil"
+      code << "(sequential #{label_s}"
+      code.indent=2
+      code << body.sexp
+      code.indent=0
+      code << ")"
+      code
+    end
+  end
+
   class Assign < Ast
     def sexp
       "(assign #{lhs.sexp} #{rhs.sexp})"
+    end
+  end
+
+  class If < Ast
+    def sexp
+      code=Code.new
+      code << "(if #{cond.sexp}"
+      code.indent=2
+      code << "(then"
+      code.indent=4
+      code << self.then.sexp
+      code.indent=2
+      code << ")"
+      if self.else
+        code << "(else"
+        code.indent=4
+        code << self.else.sexp
+        code.indent=2
+        code << ")"
+      end
+      code.indent=0
+      code << ")"
+      code
     end
   end
   #===============================
@@ -73,6 +122,7 @@ module Sexpir
       "(connect #{source.sexp} #{sink.sexp})"
     end
   end
+
   #================================
   class Binary < Expression
     def sexp
@@ -83,6 +133,12 @@ module Sexpir
   class Var < Term
     def sexp
       name
+    end
+  end
+
+  class Const < Expression
+    def sexp
+      value
     end
   end
 end

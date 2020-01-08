@@ -72,9 +72,29 @@ module Sexpir
       "output :#{output.name} => :#{output.type}"
     end
 
+    # === statements ===
     def visitBody body,args=nil
       code=Code.new
       body.stmts.each{|stmt| code << stmt.accept(self)}
+      code
+    end
+
+    def visitCombinatorial comb,args=nil
+      code=Code.new
+      code << "combinatorial(#{comb.label}){"
+      code.indent=2
+      code << comb.body.accept(self)
+      code.indent=0
+      code << "}"
+      code
+    end
+    def visitSequential seq,args=nil
+      code=Code.new
+      code << "sequential(#{seq.label}){"
+      code.indent=2
+      code << seq.body.accept(self)
+      code.indent=0
+      code << "}"
       code
     end
 
@@ -84,6 +104,25 @@ module Sexpir
       "assign(#{lhs} <= #{rhs})"
     end
 
+    def visitIf if_,args=nil
+      cond=if_.cond.accept(self)
+      code=Code.new
+      code << "if (#{cond}"
+      code.indent=2
+      code << if_.then.accept(self)
+      if if_.else
+        code.indent=0
+        code << "else"
+        code.indent=2
+        code << if_.else.accept(self)
+        code.indent=0
+      end
+      code.indent=0
+      code << "end"
+      code
+    end
+
+    # === component stuff ====
     def visitComponent component,args=nil
       name=component.name
       type=component.type
@@ -109,7 +148,7 @@ module Sexpir
     def visitBinary binary,args=nil
       lhs=binary.lhs.accept(self)
       rhs=binary.rhs.accept(self)
-      op=SEXPIR_TO_RUBY_OP[binary.op]
+      op=SEXPIR_TO_RUBY_OP[binary.op] || binary.op
       "(#{lhs} #{op} #{rhs})"
     end
 
@@ -120,5 +159,11 @@ module Sexpir
     def visitVar var,args=nil
       var.name
     end
+
+    def visitConst const,args=nil
+      const.value
+    end
+
+
   end
 end
