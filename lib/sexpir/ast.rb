@@ -18,6 +18,11 @@ module Sexpir
 
   class Signal < Ast
     attr_accessor :name,:type
+    attr_accessor :bits_sign
+    attr_accessor :reset
+    attr_accessor :reset_less
+    attr_accessor :name_override
+    attr_accessor :min,:max
   end
 
   class Io < Signal
@@ -63,6 +68,21 @@ module Sexpir
       @elsifs=[]
     end
   end
+
+  class Case < Ast
+    attr_accessor :expr,:whens,:default
+    def initialize
+      @whens=[]
+    end
+  end
+
+  class When < Ast
+    attr_accessor :expr,:body
+  end
+
+  class Default < Ast
+    attr_accessor :body
+  end
   #===============================
   class Component < Ast
     attr_accessor :name,:type
@@ -89,10 +109,15 @@ module Sexpir
     end
   end
 
-  class Const < Expression
+  class Const < Term
     attr_accessor :value
     def initialize value
       @value=value
     end
+  end
+
+  class Slice < Term
+    attr_accessor :expr
+    attr_accessor :msb,:lsb
   end
 end

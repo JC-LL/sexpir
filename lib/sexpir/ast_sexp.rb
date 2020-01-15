@@ -7,6 +7,11 @@ class Symbol
 end
 
 module Sexpir
+  class Ast
+    def sexp
+       "(nyi sorry)"
+    end
+  end
 
   class Circuit < Ast
     def sexp
@@ -26,7 +31,12 @@ module Sexpir
 
   class Signal < Ast
     def sexp
-      "(signal  #{name} #{type})"
+      attrs=instance_variables.map do |ivar|
+        var=ivar[1..-1]
+        value=instance_variable_get(ivar)
+        "(#{var} #{value})"
+      end.join(' ')
+      "(signal #{attrs})"
     end
   end
 
@@ -38,13 +48,23 @@ module Sexpir
 
   class Input < Io
     def sexp
-      "(input  #{name} #{type})"
+      attrs=instance_variables.map do |ivar|
+        var=ivar[1..-1]
+        value=instance_variable_get(ivar)
+        "(#{var} #{value})"
+      end.join(' ')
+      "(input #{attrs})"
     end
   end
 
   class Output < Io
     def sexp
-      "(output #{name} #{type})"
+      attrs=instance_variables.map do |ivar|
+        var=ivar[1..-1]
+        value=instance_variable_get(ivar)
+        "(#{var} #{value})"
+      end.join(' ')
+      "(output #{attrs})"
     end
   end
 
@@ -110,6 +130,44 @@ module Sexpir
       code
     end
   end
+
+
+  class Case < Ast
+    def sexp
+      code=Code.new
+      code << "(case #{expr.sexp}"
+      code.indent=2
+      whens.each{|when_| code << when_.sexp}
+      code << self.default.sexp
+      code.indent=0
+      code << ")"
+      code
+    end
+  end
+
+  class When < Ast
+    def sexp
+      code=Code.new
+      code << "(when #{expr.sexp}"
+      code.indent=2
+      code << body.sexp
+      code.indent=0
+      code << ")"
+      code
+    end
+  end
+
+  class Default < Ast
+    def sexp
+      code=Code.new
+      code << "(default "
+      code.indent=2
+      code << body.sexp
+      code.indent=0
+      code << ")"
+      code
+    end
+  end
   #===============================
   class Component < Ast
     def sexp
@@ -136,7 +194,7 @@ module Sexpir
     end
   end
 
-  class Const < Expression
+  class Const < Term
     def sexp
       value
     end

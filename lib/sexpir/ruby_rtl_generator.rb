@@ -12,18 +12,27 @@ module Sexpir
       log "[+] generating RubyRTL '#{circuit.name}'"
       code=circuit.accept(self)
       puts code.finalize
+      filename=circuit.name.to_s+".rb"
+      code.save_as filename
     end
 
     def visitCircuit circuit,args=nil
       code=Code.new
       code << "require 'ruby_rtl'"
+      code.newline
+      code << "include RubyRTL"
+      code.newline
       code << "class #{circuit.name.capitalize} < Circuit"
       code.indent=2
+      code << "def initialize"
+      code.indent=4
       circuit.inputs.each{|input| code << input.accept(self)}
       circuit.outputs.each{|output| code << output.accept(self)}
       circuit.signals.each{|signal| code << signal.accept(self)}
       code.newline
       code << circuit.body.accept(self)
+      code.indent=2
+      code << "end"
       code.indent=0
       code << "end"
       code
@@ -107,18 +116,55 @@ module Sexpir
     def visitIf if_,args=nil
       cond=if_.cond.accept(self)
       code=Code.new
-      code << "if (#{cond}"
+      code << "If(#{cond}){"
       code.indent=2
       code << if_.then.accept(self)
       if if_.else
         code.indent=0
-        code << "else"
+        code << "Else{"
         code.indent=2
         code << if_.else.accept(self)
         code.indent=0
+        code << "}"
+      else
+        code.indent=0
+        code << "}"
       end
+      code
+    end
+
+    def visitCase case_,args=nil
+      expr=case_.expr.accept(self)
+      code=Code.new
+      code << "Case(#{expr}){"
+      code.indent=2
+      case_.whens.each do |when_|
+        code << when_.accept(self)
+      end
+      code << case_.default.accept(self)
       code.indent=0
-      code << "end"
+      code << "}"
+      code
+    end
+
+    def visitWhen when_,args=nil
+      expr=when_.expr.accept(self)
+      code=Code.new
+      code << "When(#{expr}){"
+      code.indent=2
+      code << when_.body.accept(self)
+      code.indent=0
+      code << "}"
+      code
+    end
+
+    def visitDefault default_,args=nil
+      code=Code.new
+      code << "Else{"
+      code.indent=2
+      code << default_.body.accept(self)
+      code.indent=0
+      code << "}"
       code
     end
 
@@ -162,6 +208,13 @@ module Sexpir
 
     def visitConst const,args=nil
       const.value
+    end
+
+    def visitSlice slice,args=nil
+      expr=slice.expr.accept(self)
+      msb=slice.msb.accept(self)
+      lsb=slice.lsb.accept(self)
+      "#{expr}[#{msb}..#{lsb}]"
     end
 
 

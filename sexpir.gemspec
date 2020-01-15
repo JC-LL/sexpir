@@ -2,7 +2,7 @@ require_relative "./lib/sexpir/version"
 
 Gem::Specification.new do |s|
   s.name        = 'sexpir'
-  s.version     = sexpir::VERSION
+  s.version     = Sexpir::VERSION
   s.date        = Time.now.strftime("%Y-%m-%d")
   s.summary     = "interchange format for RTL designs"
   s.description = "sexpir is a sexp-based interchange format for RTL design"

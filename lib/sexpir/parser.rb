@@ -70,7 +70,29 @@ module Sexpir
       sig=Signal.new
       sexp.shift
       sig.name=sexp.shift
-      sig.type=sexp.shift
+      case sexp.first
+      when Symbol
+        sig.type=sexp.shift
+      when Integer
+        val=sexp.shift
+        sig.type="bv#{val}"
+      end
+      while sexp.any?
+        case sexp.first
+        when Array
+          ary=sexp.shift
+          field_name=ary.shift
+          case field_name
+          when :bits_sign,:name,:reset,:reset_less,:name_override,:min,:max
+            sig.send("#{field_name}=",ary.shift)
+          else
+            raise "unknow signal attribut '#{field_name}'"
+          end
+        else
+          raise "unknown signal attribute '#{sexpr.first}'"
+        end
+      end
+
       sig
     end
 
@@ -78,7 +100,28 @@ module Sexpir
       input=Input.new
       sexp.shift
       input.name=sexp.shift
-      input.type=sexp.shift
+      case sexp.first
+      when Symbol
+        input.type=sexp.shift
+      when Integer
+        val=sexp.shift
+        input.type="bv#{val}"
+      end
+      while sexp.any?
+        case sexp.first
+        when Array
+          ary=sexp.shift
+          field_name=ary.shift
+          case field_name
+          when :bits_sign,:name,:reset,:reset_less,:name_override,:min,:max
+            input.send("#{field_name}=",ary.shift)
+          else
+            raise "unknow signal attribut '#{field_name}'"
+          end
+        else
+          raise "unknown signal attribute '#{sexpr.first}'"
+        end
+      end
       input
     end
 
@@ -86,7 +129,28 @@ module Sexpir
       output=Output.new
       sexp.shift
       output.name=sexp.shift
-      output.type=sexp.shift
+      case sexp.first
+      when Symbol
+        output.type=sexp.shift
+      when Integer
+        val=sexp.shift
+        output.type="bv#{val}"
+      end
+      while sexp.any?
+        case sexp.first
+        when Array
+          ary=sexp.shift
+          field_name=ary.shift
+          case field_name
+          when :bits_sign,:name,:reset,:reset_less,:name_override,:min,:max
+            output.send("#{field_name}=",ary.shift)
+          else
+            raise "unknow signal attribut '#{field_name}'"
+          end
+        else
+          raise "unknown signal attribute '#{sexpr.first}'"
+        end
+      end
       output
     end
 
@@ -129,6 +193,8 @@ module Sexpir
         parse_if(sexp)
       when :assign
         parse_assign(sexp)
+      when :case
+        parse_case(sexp)
       else
         raise "unknow statement starting with : #{sexp.first}"
       end
@@ -136,6 +202,14 @@ module Sexpir
 
     def parse_comb sexp
       comb=Combinatorial.new
+      sexp.shift
+      label=sexp.shift
+      comb.body=parse_body(sexp)
+      comb
+    end
+
+    def parse_seq sexp
+      comb=Sequential.new
       sexp.shift
       label=sexp.shift
       comb.body=parse_body(sexp)
@@ -195,6 +269,40 @@ module Sexpir
       assign
     end
 
+    def parse_case sexp
+      ret=Case.new
+      sexp.shift
+      ret.expr=parse_expression(sexp.shift)
+      while sexp.any?
+        ary=sexp.shift
+        case ary.first
+        when :when
+          ret.whens << parse_when(ary)
+        when :default
+          ret.default=parse_default(ary)
+        else
+          raise "unknown case alternative : '#{ary.first}'"
+        end
+      end
+
+      ret
+    end
+
+    def parse_when sexp
+      ret=When.new
+      sexp.shift
+      ret.expr=parse_expression(sexp.shift)
+      ret.body=parse_body(sexp)
+      ret
+    end
+
+    def parse_default sexp
+      ret=Default.new
+      sexp.shift
+      ret.body=parse_body(sexp)
+      ret
+    end
+
     # expressions
 
     def parse_expression sexp
@@ -214,6 +322,8 @@ module Sexpir
           ret=parse_unary(sexp)
         when 3
           ret=parse_binary(sexp)
+        when 4
+          ret=parse_slice(sexp)
         else
           raise "unknown expression '#{sexp}'(size = '#{sexp.size}')"
         end
@@ -268,6 +378,15 @@ module Sexpir
     def parse_unary sexp
       ret=Unary.new
       ret.op=sexp.shift
+      ret
+    end
+
+    def parse_slice sexp
+      ret=Slice.new
+      sexp.shift
+      ret.expr=parse_expression(sexp.shift)
+      ret.msb=parse_expression(sexp.shift)
+      ret.lsb=parse_expression(sexp.shift)
       ret
     end
   end
